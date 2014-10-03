@@ -1,0 +1,34 @@
+{
+	"name" : "bolt/github",
+	"type" : "bolt-extension",
+	"keywords" : [
+		""
+	],
+	"require" : {
+		"bolt/bolt" : ">=2.0.0,<3.0.0"
+	},
+	"license" : "MIT",
+	"authors" : [{
+			"name" : "Gawain Lynch",
+			"email" : "gawain.lynch@gmail.com"
+		}
+	],
+	"autoload" : {
+		"files" : [
+			"init.php"
+		],
+		"psr-4" : {
+			"Bolt\\Extension\\Bolt\\GitHub\\" : [
+				"",
+				"src/"
+			],
+			"Github\\" : "lib/Github"
+		}
+	},
+	"extra" : {
+		"branch-alias" : {
+			"dev-master" : "2.0.*-dev"
+		}
+	},
+	"description" : "GitHub API interface for Bolt"
+}

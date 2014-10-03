@@ -1,0 +1,50 @@
+{#
+ # Passed in variables:
+ #   members[]
+ #       login                - string
+ #       id                   - integer
+ #       avatar_url           - string
+ #       gravatar_id          - string
+ #       url                  - string
+ #       html_url             - string
+ #       followers_url        - string
+ #       following_url        - string
+ #       gists_url            - string
+ #       starred_url          - string
+ #       subscriptions_url    - string
+ #       organizations_url    - string
+ #       repos_url            - string
+ #       events_url           - string
+ #       received_events_url  - string
+ #       type                 - string
+ #       site_admin           - boolean
+ #       name                 - string
+ #       company              - string
+ #       blog                 - string
+ #       location             - string
+ #       email                - string
+ #       hireable             - boolean
+ #       bio                  - string
+ #       public_repos         - integer
+ #       public_gists         - integer
+ #       followers            - integer
+ #       following            - integer
+ #       created_at           - string
+ #       updated_at           - string
+ #       private_gists        - integer
+ #       total_private_repos  - integer
+ #       owned_private_repos  - integer
+ #       disk_usage           - integer
+ #       collaborators        - integer
+ #}
+
+{% for member in members %}
+<div class="row">
+    <div class="small-12 columns">
+        <img alt="{{ member.login }}" src="{{ member.avatar_url }}">
+    </div>
+    <div class="small-12 columns">
+        <a href="{{ member.html_url }}" target="_blank">{{ member.login }}</a>
+    </div>
+</div>
+{% endfor %}

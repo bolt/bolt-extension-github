@@ -1,0 +1,9 @@
+#
+github:
+  org: bolt
+  repo: bolt
+#  token: your-github-auth-token
+
+templates:
+  collaborators: members.twig
+  contributors: members.twig
