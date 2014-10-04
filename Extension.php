@@ -89,7 +89,15 @@ class Extension extends \Bolt\BaseExtension
     protected function getDefaultConfig()
     {
         return array(
-            'cache' => false
+            'github' => array(
+                'org'  => 'bolt',
+                'repo' => 'bolt'
+            ),
+            'cache' => false,
+            'templates' => array(
+                'collaborators'  => 'members.twig',
+                'contributors'   => 'members.twig'
+            )
         );
     }
 
