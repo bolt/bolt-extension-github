@@ -93,13 +93,23 @@ class GitHubExtension extends \Twig_Extension
      *
      * @return Twig_Markup
      */
-    public function githubRepoCollaborators()
+    public function githubRepoCollaborators($userinfo = false)
     {
         $this->addTwigPath($this->app);
 
+        $collaborators = $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
+
+        if ($userinfo) {
+            foreach ($collaborators as $collaborator) {
+                $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
+            }
+        } else {
+            $members = $collaborators;
+        }
+
         // Get our values to be passed to Twig
         $twigvalues = array(
-            'members' => $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo'])
+            'members' => $members
         );
 
         $html = $this->app['render']->render($this->config['templates']['collaborators'], $twigvalues);
@@ -113,13 +123,23 @@ class GitHubExtension extends \Twig_Extension
      *
      * @return Twig_Markup
      */
-    public function githubRepoContributors()
+    public function githubRepoContributors($userinfo = false)
     {
         $this->addTwigPath($this->app);
 
+        $contributors = $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo']);
+
+        if ($userinfo) {
+            foreach ($contributors as $contributor) {
+                $members[] = $this->getGitHubAPI()->api('user')->show($contributor['login']);
+            }
+        } else {
+            $members = $contributors;
+        }
+
         // Get our values to be passed to Twig
         $twigvalues = array(
-            'members' => $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo'])
+            'members' => $members
         );
 
         $html = $this->app['render']->render($this->config['templates']['contributors'], $twigvalues);
