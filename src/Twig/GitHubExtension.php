@@ -4,6 +4,7 @@ namespace Bolt\Extension\Bolt\GitHub\Twig;
 
 use Bolt\Extension\Bolt\GitHub\Extension;
 use Github;
+use Github\Client as GithubClient;
 use Github\HttpClient\CachedHttpClient;
 use Silex\Application;
 
@@ -81,8 +82,9 @@ class GitHubExtension extends \Twig_Extension
     public function getFunctions()
     {
         return array(
-            'github_collaborators' => new \Twig_Function_Method($this, 'twigCollaborators'),
-            'github_contributors'  => new \Twig_Function_Method($this, 'twigContributors')
+            'github_collaborators' => new \Twig_Function_Method($this, 'githubRepoCollaborators'),
+            'github_contributors'  => new \Twig_Function_Method($this, 'githubRepoContributors'),
+            'github_user'  => new \Twig_Function_Method($this, 'githubUser')
         );
     }
 
@@ -91,7 +93,7 @@ class GitHubExtension extends \Twig_Extension
      *
      * @return Twig_Markup
      */
-    public function twigCollaborators()
+    public function githubRepoCollaborators()
     {
         $this->addTwigPath($this->app);
 
@@ -116,7 +118,7 @@ class GitHubExtension extends \Twig_Extension
      *
      * @return Twig_Markup
      */
-    public function twigContributors()
+    public function githubRepoContributors()
     {
         $this->addTwigPath($this->app);
 
@@ -137,6 +139,21 @@ class GitHubExtension extends \Twig_Extension
         return new \Twig_Markup($html, 'UTF-8');
     }
 
+    /**
+     * Get the user info for a GitHub user
+     *
+     * @return array
+     */
+    public function githubUser($user)
+    {
+        return $this->getGitHubAPI()->api('user')->show($user);
+    }
+
+    /**
+     * Get a valid GitHub API object
+     *
+     * @return \Github\Client
+     */
     private function getGitHubAPI()
     {
         if ($this->client) {
@@ -145,18 +162,18 @@ class GitHubExtension extends \Twig_Extension
 
         if ($this->config['cache']) {
             // GitHub API client with cache
-//             $this->client = new \Github\Client(
+//             $this->client = new GithubClient(
 //                 new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
 //             );
 
-            $this->client = new \Github\Client();
+            $this->client = new GithubClient();
             $this->addCache();
         } else {
-            $this->client = new \Github\Client();
+            $this->client = new GithubClient();
         }
 
         if (isset($this->config['github']['token'])) {
-            $this->client->authenticate($this->config['github']['token'], Github\Client::AUTH_HTTP_TOKEN);
+            $this->client->authenticate($this->config['github']['token'], GithubClient::AUTH_HTTP_TOKEN);
         }
 
         return $this->client;
