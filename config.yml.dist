@@ -4,6 +4,9 @@ github:
   repo: bolt
 #  token: your-github-auth-token
 
+# Enable caching of requests
+cache: false
+
 templates:
   collaborators: members.twig
   contributors: members.twig

@@ -89,6 +89,7 @@ class Extension extends \Bolt\BaseExtension
     protected function getDefaultConfig()
     {
         return array(
+            'cache' => false
         );
     }
 

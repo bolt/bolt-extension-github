@@ -141,10 +141,14 @@ class GitHubExtension extends \Twig_Extension
             return $this->client;
         }
 
-        // GitHub API client with cache
-        $this->client = new \Github\Client(
-            new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
-        );
+        if ($this->config['cache']) {
+            $this->client = new \Github\Client();
+        } else {
+            // GitHub API client with cache
+            $this->client = new \Github\Client(
+                new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
+            );
+        }
 
         if (isset($this->config['github']['token'])) {
             $this->client->authenticate($this->config['github']['token'], Github\Client::AUTH_HTTP_TOKEN);
