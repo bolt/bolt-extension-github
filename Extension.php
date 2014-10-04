@@ -49,19 +49,6 @@ class Extension extends \Bolt\BaseExtension
 
     public function initialize()
     {
-
-        /*
-         * Config
-         */
-        $this->setConfig();
-
-        /*
-         * Backend
-         */
-        if ($this->app['config']->getWhichEnd() == 'backend') {
-            //
-        }
-
         /*
          * Frontend
          */
@@ -69,16 +56,6 @@ class Extension extends \Bolt\BaseExtension
             // Twig functions
             $this->app['twig']->addExtension(new Twig\GitHubExtension($this->app));
         }
-    }
-
-    /**
-     * Post config file loading configuration
-     *
-     * @return void
-     */
-    private function setConfig()
-    {
-        //
     }
 
     /**
