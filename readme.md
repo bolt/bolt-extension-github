@@ -1,10 +1,10 @@
 GitHub API for Bolt
--------------------
+===================
 
 Implementation of the GitHub API as a Bolt extension.
 
 Set up
-======
+------
 
 Set the following parameters (at a minimum) in the `app/config/extensions/github.bolt.yml` file:
 
@@ -15,7 +15,7 @@ github:
 ```
 
 Template Use
-============
+------------
 
 The following functions are available for inclusion in templates:
 
