@@ -84,7 +84,7 @@ class GitHubExtension extends \Twig_Extension
         return array(
             'github_collaborators' => new \Twig_Function_Method($this, 'githubRepoCollaborators'),
             'github_contributors'  => new \Twig_Function_Method($this, 'githubRepoContributors'),
-            'github_user'  => new \Twig_Function_Method($this, 'githubUser')
+            'github_user'          => new \Twig_Function_Method($this, 'githubUser')
         );
     }
 
@@ -149,12 +149,13 @@ class GitHubExtension extends \Twig_Extension
             return $this->client;
         }
 
+        /*
+         * The API comes with a cache extension, but it fails in Guzzle.
+         * @see https://github.com/KnpLabs/php-github-api/issues/116
+         *
+         * We are using the preferable Guzzle cache plugin that seems more stable
+         */
         if ($this->config['cache']) {
-            // GitHub API client with cache
-//             $this->client = new GithubClient(
-//                 new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
-//             );
-
             $this->client = new GithubClient();
             $this->addCache();
         } else {
