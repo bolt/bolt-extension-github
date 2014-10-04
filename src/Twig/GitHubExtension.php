@@ -97,14 +97,9 @@ class GitHubExtension extends \Twig_Extension
     {
         $this->addTwigPath($this->app);
 
-        $collaborators = $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
-
-        foreach ($collaborators as $collaborator) {
-            $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
-        }
         // Get our values to be passed to Twig
         $twigvalues = array(
-            'members' => $members
+            'members' => $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo'])
         );
 
         $html = $this->app['render']->render($this->config['templates']['collaborators'], $twigvalues);
@@ -122,15 +117,9 @@ class GitHubExtension extends \Twig_Extension
     {
         $this->addTwigPath($this->app);
 
-        $contributors = $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo']);
-
-        foreach ($contributors as $contributor) {
-            $members[] = $this->getGitHubAPI()->api('user')->show($contributor['login']);
-        }
-
         // Get our values to be passed to Twig
         $twigvalues = array(
-            'members' => $members
+            'members' => $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo'])
         );
 
         $html = $this->app['render']->render($this->config['templates']['contributors'], $twigvalues);

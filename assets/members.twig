@@ -18,6 +18,8 @@
  #       received_events_url  - string
  #       type                 - string
  #       site_admin           - boolean
+ #
+ # Callable {{ set user = github_user(login) }}
  #       name                 - string
  #       company              - string
  #       blog                 - string
@@ -43,10 +45,10 @@
     <div class="small-4 columns">
         <div class="row">
             <div class="small-12 columns">
-                <img alt="{{ member.name|default(member.login) }}" src="{{ member.avatar_url|default('') }}" style="width: 100px; height: 100px;">
+                <img alt="{{ member.login|default('') }}" src="{{ member.avatar_url|default('') }}" style="width: 100px; height: 100px;">
             </div>
             <div class="small-12 columns">
-                <a href="{{ member.html_url|default('') }}" target="_blank">{{ member.name|default(member.login) }}</a>
+                <a href="{{ member.html_url|default('') }}" target="_blank">{{ member.login|default('') }}</a>
             </div>
         </div>
     </div>
