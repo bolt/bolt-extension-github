@@ -5,7 +5,7 @@ github:
 #  token: your-github-auth-token
 
 # Enable caching of requests
-cache: false
+cache: true
 
 templates:
   collaborators: members.twig

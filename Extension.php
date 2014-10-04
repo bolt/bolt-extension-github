@@ -93,7 +93,7 @@ class Extension extends \Bolt\BaseExtension
                 'org'  => 'bolt',
                 'repo' => 'bolt'
             ),
-            'cache' => false,
+            'cache' => true,
             'templates' => array(
                 'collaborators'  => 'members.twig',
                 'contributors'   => 'members.twig'
