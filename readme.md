@@ -1,14 +1,26 @@
 GitHub API for Bolt
 -------------------
 
-**CACHE WARNING** There is a bug in the API with caching and you need to dump `app/cache/github/` after each page load, if enabled.
+Implementation of the GitHub API as a Bolt extension.
+
+Set up
+======
+
+Set the following parameters (at a minimum) in the `app/config/extensions/github.bolt.yml` file:
+
+```yaml
+github:
+  org: bolt
+  repo: bolt
+```
+
+Template Use
+============
+
+The following functions are available for inclusion in templates
 
 ```
 {{ github_collaborators() }}
-```
-
-or
-
-```
 {{ github_contributors() }}
+{{ github_user(user) }}
 ```
