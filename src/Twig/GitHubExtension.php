@@ -7,6 +7,11 @@ use Github;
 use Github\HttpClient\CachedHttpClient;
 use Silex\Application;
 
+use Doctrine\Common\Cache\FilesystemCache;
+use Guzzle\Cache\DoctrineCacheAdapter;
+use Guzzle\Plugin\Cache\CachePlugin;
+use Guzzle\Plugin\Cache\DefaultCacheStorage;
+
 /**
  * Twig functions for Bolt GitHub Repo
  *
@@ -93,10 +98,7 @@ class GitHubExtension extends \Twig_Extension
         $collaborators = $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
 
         foreach ($collaborators as $collaborator) {
-            try {
-                $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
-            } catch (Exception $e) {
-            }
+            $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
         }
         // Get our values to be passed to Twig
         $twigvalues = array(
@@ -142,12 +144,15 @@ class GitHubExtension extends \Twig_Extension
         }
 
         if ($this->config['cache']) {
-            $this->client = new \Github\Client();
-        } else {
             // GitHub API client with cache
-            $this->client = new \Github\Client(
-                new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
-            );
+//             $this->client = new \Github\Client(
+//                 new Github\HttpClient\CachedHttpClient(array('cache_dir' => $this->app['paths']['cache'] . '/github'))
+//             );
+
+            $this->client = new \Github\Client();
+            $this->addCache();
+        } else {
+            $this->client = new \Github\Client();
         }
 
         if (isset($this->config['github']['token'])) {
@@ -155,6 +160,23 @@ class GitHubExtension extends \Twig_Extension
         }
 
         return $this->client;
+    }
+
+    /**
+     * Use a Guzzle/Doctrine cache instead of the APIs
+     */
+    private function addCache()
+    {
+        $cachePlugin = new CachePlugin(array(
+            'storage' => new DefaultCacheStorage(
+                new DoctrineCacheAdapter(
+                    new FilesystemCache($this->app['paths']['cache'] . '/github')
+                    )
+                )
+            )
+        );
+
+        $this->client->getHttpClient()->client->addSubscriber($cachePlugin);
     }
 
     /**
