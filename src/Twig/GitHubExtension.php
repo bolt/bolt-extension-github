@@ -97,8 +97,10 @@ class GitHubExtension extends \Twig_Extension
     {
         $this->addTwigPath($this->app);
 
+        // Call API for org/repo collaborators
         $collaborators = $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
 
+        // If the caller wants user info added, give it to them
         if ($userinfo) {
             foreach ($collaborators as $collaborator) {
                 $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
@@ -127,8 +129,10 @@ class GitHubExtension extends \Twig_Extension
     {
         $this->addTwigPath($this->app);
 
+        // Call API for org/repo contributors
         $contributors = $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo']);
 
+        // If the caller wants user info added, give it to them
         if ($userinfo) {
             foreach ($contributors as $contributor) {
                 $members[] = $this->getGitHubAPI()->api('user')->show($contributor['login']);
