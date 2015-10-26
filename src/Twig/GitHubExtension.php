@@ -85,6 +85,7 @@ class GitHubExtension extends \Twig_Extension
             'github_collaborators' => new \Twig_Function_Method($this, 'githubRepoCollaborators'),
             'github_contributors'  => new \Twig_Function_Method($this, 'githubRepoContributors'),
             'github_user'          => new \Twig_Function_Method($this, 'githubUser')
+            'github_user_events'   => new \Twig_Function_Method($this, 'githubUserEvents')
         );
     }
 
@@ -160,6 +161,16 @@ class GitHubExtension extends \Twig_Extension
     public function githubUser($user)
     {
         return $this->getGitHubAPI()->api('user')->show($user);
+    }
+
+    /**
+     * Get the public events for a Github user
+     *
+     * @return array
+     */
+    public function githubUserEvents($user)
+    {
+        return $this->getGitHubAPI()->api('user')->publicEvents($user);
     }
 
     /**
