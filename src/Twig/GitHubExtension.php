@@ -84,8 +84,8 @@ class GitHubExtension extends \Twig_Extension
         return array(
             'github_collaborators' => new \Twig_Function_Method($this, 'githubRepoCollaborators'),
             'github_contributors'  => new \Twig_Function_Method($this, 'githubRepoContributors'),
-            'github_user'          => new \Twig_Function_Method($this, 'githubUser')
-            'github_user_events'   => new \Twig_Function_Method($this, 'githubUserEvents')
+            'github_user'          => new \Twig_Function_Method($this, 'githubUser'),
+            'github_user_events'   => new \Twig_Function_Method($this, 'githubUserEvents'),
         );
     }
 
