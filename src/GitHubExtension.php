@@ -3,6 +3,13 @@
 namespace Bolt\Extension\Bolt\GitHub;
 
 use Bolt\Extension\SimpleExtension;
+use Doctrine\Common\Cache\FilesystemCache;
+use Github\Client as GithubClient;
+use Github\HttpClient\HttpClient as GithubHttpClient;
+use Guzzle\Cache\DoctrineCacheAdapter;
+use Guzzle\Plugin\Cache\CachePlugin;
+use Guzzle\Plugin\Cache\DefaultCacheStorage;
+use Pimple as Container;
 use Silex\Application;
 
 /**
@@ -34,10 +41,60 @@ class GitHubExtension extends SimpleExtension
      */
     protected function registerServices(Application $app)
     {
+        $app['github.api.client.cache'] = $app->share(
+            function ($app) {
+                $fsCache = new FilesystemCache($app['resources']->getPath('cache/github'));
+                $cacheAdapter = new DoctrineCacheAdapter($fsCache);
+                $storage = ['storage' => new DefaultCacheStorage($cacheAdapter)];
+                $cachePlugin = new CachePlugin($storage);
+
+                return $cachePlugin;
+            }
+        );
+
+        $app['github.api.client'] = $app->share(
+            function ($app) {
+                $config = $this->getConfig();
+                $options = [
+                    'base_url'    => 'https://api.github.com/',
+                    'user_agent'  => 'Bolt GitHub API (http://github.com/GawainLynch/bolt-extension-github)',
+                    'timeout'     => 10,
+                    'api_limit'   => 5000,
+                    'api_version' => 'v3',
+                    'cache_dir'   => $app['resources']->getPath('cache/github'),
+                ];
+                $client = new GithubClient(new GithubHttpClient($options));
+
+                /*
+                 * The API comes with a cache extension, but it fails in Guzzle.
+                 * @see https://github.com/KnpLabs/php-github-api/issues/116
+                 *
+                 * We are using the preferable Guzzle cache plugin that seems more stable
+                 */
+                if ($config['cache']) {
+                    $client->getHttpClient()->addSubscriber($app['github.api.client.cache']);
+                }
+
+                if ($config['github']['token'] !== null) {
+                    $client->authenticate($config['github']['token'], GithubClient::AUTH_HTTP_TOKEN);
+                }
+
+                return $client;
+            }
+        );
+
+        $app['github.api'] = $app->share(
+            function ($app) {
+                return new Container([
+                    'client' => $app->share(function () use ($app) { return $app['github.api.client']; }),
+                ]);
+            }
+        );
+
         $app['twig'] = $app->extend(
             'twig',
             function (\Twig_Environment $twig) use ($app) {
-                $twig->addExtension(new Twig\GitHubExtension($this->getConfig(), $app['resources']));
+                $twig->addExtension(new Twig\GitHubExtension($this->getConfig(), $app['github.api']));
 
                 return $twig;
             }
@@ -53,8 +110,9 @@ class GitHubExtension extends SimpleExtension
     {
         return [
             'github' => [
-                'org'  => 'bolt',
-                'repo' => 'bolt',
+                'org'   => 'bolt',
+                'repo'  => 'bolt',
+                'token' => null,
             ],
             'cache'     => true,
             'templates' => [

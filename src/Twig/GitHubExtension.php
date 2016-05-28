@@ -2,14 +2,9 @@
 
 namespace Bolt\Extension\Bolt\GitHub\Twig;
 
-use Bolt\Configuration\ResourceManager;
-use Doctrine\Common\Cache\FilesystemCache;
 use Github\Api as GithubApi;
 use Github\Client as GithubClient;
-use Github\HttpClient\HttpClient as GithubHttpClient;
-use Guzzle\Cache\DoctrineCacheAdapter;
-use Guzzle\Plugin\Cache\CachePlugin;
-use Guzzle\Plugin\Cache\DefaultCacheStorage;
+use Pimple as Container;
 use Silex\Application;
 use Twig_Environment as TwigEnvironment;
 use Twig_Extension as TwigExtension;
@@ -42,23 +37,21 @@ class GitHubExtension extends TwigExtension
 {
     /** @var array */
     private $config;
-    /** @var ResourceManager */
-    private $resources;
-    /** @var GithubClient */
-    private $client = null;
+    /** @var Container */
+    private $api;
 
     /**
      * Constructor.
      *
-     * @param array           $config
-     * @param ResourceManager $resources
+     * @param array     $config
+     * @param Container $api
      *
      * @internal param Application $app
      */
-    public function __construct(array $config, ResourceManager $resources)
+    public function __construct(array $config, Container $api)
     {
         $this->config = $config;
-        $this->resources = $resources;
+        $this->api = $api;
     }
 
     /**
@@ -182,51 +175,10 @@ class GitHubExtension extends TwigExtension
     /**
      * Get a valid GitHub API object.
      *
-     * @return \Github\Client
+     * @return GithubClient
      */
     private function getGitHubAPI()
     {
-        if ($this->client !== null) {
-            return $this->client;
-        }
-
-        $options = [
-            'base_url'    => 'https://api.github.com/',
-            'user_agent'  => 'Bolt GitHub API (http://github.com/GawainLynch/bolt-extension-github)',
-            'timeout'     => 10,
-            'api_limit'   => 5000,
-            'api_version' => 'v3',
-            'cache_dir'   => $this->resources->getPath('cache/github')
-        ];
-        $this->client = new GithubClient(new GithubHttpClient($options));
-
-        /*
-         * The API comes with a cache extension, but it fails in Guzzle.
-         * @see https://github.com/KnpLabs/php-github-api/issues/116
-         *
-         * We are using the preferable Guzzle cache plugin that seems more stable
-         */
-        if ($this->config['cache']) {
-            $this->addCache();
-        }
-
-        if (isset($this->config['github']['token'])) {
-            $this->client->authenticate($this->config['github']['token'], GithubClient::AUTH_HTTP_TOKEN);
-        }
-
-        return $this->client;
-    }
-
-    /**
-     * Use a Guzzle/Doctrine cache instead of the APIs.
-     */
-    private function addCache()
-    {
-        $fsCache = new FilesystemCache($this->resources->getPath('cache/github'));
-        $cacheAdapter = new DoctrineCacheAdapter($fsCache);
-        $storage = ['storage' => new DefaultCacheStorage($cacheAdapter)];
-        $cachePlugin = new CachePlugin($storage);
-
-        $this->client->getHttpClient()->addSubscriber($cachePlugin);
+        return $this->api['client'];
     }
 }
