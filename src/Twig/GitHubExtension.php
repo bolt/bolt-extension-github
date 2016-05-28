@@ -2,21 +2,24 @@
 
 namespace Bolt\Extension\Bolt\GitHub\Twig;
 
-use Bolt\Extension\Bolt\GitHub\Extension;
-use Github;
-use Github\Client as GithubClient;
-use Github\HttpClient\CachedHttpClient;
-use Silex\Application;
-
+use Bolt\Configuration\ResourceManager;
 use Doctrine\Common\Cache\FilesystemCache;
+use Github\Api as GithubApi;
+use Github\Client as GithubClient;
+use Github\HttpClient\HttpClient as GithubHttpClient;
 use Guzzle\Cache\DoctrineCacheAdapter;
 use Guzzle\Plugin\Cache\CachePlugin;
 use Guzzle\Plugin\Cache\DefaultCacheStorage;
+use Silex\Application;
+use Twig_Environment as TwigEnvironment;
+use Twig_Extension as TwigExtension;
+use Twig_Markup as TwigMarkup;
+use Twig_SimpleFunction as TwigSimpleFunction;
 
 /**
  * Twig functions for Bolt GitHub Repo
  *
- * Copyright (C) 2014 Gawain Lynch
+ * Copyright (C) 2014-2016 Gawain Lynch
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,40 +35,30 @@ use Guzzle\Plugin\Cache\DefaultCacheStorage;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author    Gawain Lynch <gawain.lynch@gmail.com>
- * @copyright Copyright (c) 2014, Gawain Lynch
+ * @copyright Copyright (c) 2014-2016, Gawain Lynch
  * @license   http://opensource.org/licenses/GPL-3.0 GNU Public License 3.0
  */
-class GitHubExtension extends \Twig_Extension
+class GitHubExtension extends TwigExtension
 {
-    /**
-     * @var Application
-     */
-    private $app;
-
-    /**
-     * @var array
-     */
+    /** @var array */
     private $config;
-
-    /**
-     * @var Github\HttpClient\CachedHttpClient
-     */
+    /** @var ResourceManager */
+    private $resources;
+    /** @var GithubClient */
     private $client = null;
 
     /**
-     * @var \Twig_Environment
+     * Constructor.
+     *
+     * @param array           $config
+     * @param ResourceManager $resources
+     *
+     * @internal param Application $app
      */
-    private $twig = null;
-
-    public function __construct(Application $app)
+    public function __construct(array $config, ResourceManager $resources)
     {
-        $this->app      = $app;
-        $this->config   = $this->app[Extension::CONTAINER]->config;
-    }
-
-    public function initRuntime(\Twig_Environment $environment)
-    {
-        $this->twig = $environment;
+        $this->config = $config;
+        $this->resources = $resources;
     }
 
     /**
@@ -73,7 +66,7 @@ class GitHubExtension extends \Twig_Extension
      */
     public function getName()
     {
-        return 'boltforms.extension';
+        return 'GitHubAPI';
     }
 
     /**
@@ -81,108 +74,131 @@ class GitHubExtension extends \Twig_Extension
      */
     public function getFunctions()
     {
-        return array(
-            'github_collaborators' => new \Twig_Function_Method($this, 'githubRepoCollaborators'),
-            'github_contributors'  => new \Twig_Function_Method($this, 'githubRepoContributors'),
-            'github_user'          => new \Twig_Function_Method($this, 'githubUser'),
-            'github_user_events'   => new \Twig_Function_Method($this, 'githubUserEvents'),
-        );
+        $env  = ['needs_environment' => true];
+
+        return [
+            new TwigSimpleFunction('github_collaborators', [$this, 'gitHubRepoCollaborators'], $env),
+            new TwigSimpleFunction('github_contributors',  [$this, 'gitHubRepoContributors'], $env),
+            new TwigSimpleFunction('github_user',          [$this, 'gitHubUser']),
+            new TwigSimpleFunction('github_user_events',   [$this, 'gitHubUserEvents']),
+        ];
     }
 
     /**
+     * @param TwigEnvironment $twig
+     * @param bool            $includeUserInfo
      *
-     *
-     * @return Twig_Markup
+     * @return TwigMarkup
      */
-    public function githubRepoCollaborators($userinfo = false)
+    public function gitHubRepoCollaborators(TwigEnvironment $twig, $includeUserInfo = false)
     {
-        $this->addTwigPath($this->app);
-
+        $members = [];
+        /** @var GithubApi\Repo $apiRepo */
+        $apiRepo = $this->getGitHubAPI()->api('repo');
         // Call API for org/repo collaborators
-        $collaborators = $this->getGitHubAPI()->api('repo')->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
+        $collaborators = $apiRepo->collaborators()->all($this->config['github']['org'], $this->config['github']['repo']);
 
-        // If the caller wants user info added, give it to them
-        if ($userinfo) {
+        if ($includeUserInfo) {
             foreach ($collaborators as $collaborator) {
-                $members[] = $this->getGitHubAPI()->api('user')->show($collaborator['login']);
+                /** @var GithubApi\User $apiUser */
+                $apiUser = $this->getGitHubAPI()->api('user');
+                $members[] = $apiUser->show($collaborator['login']);
             }
         } else {
             $members = $collaborators;
         }
 
-        // Get our values to be passed to Twig
-        $twigvalues = array(
-            'members' => $members
-        );
+        $context = [
+            'members' => $members,
+        ];
+        $html = $twig->render($this->config['templates']['collaborators'], $context);
 
-        $html = $this->app['render']->render($this->config['templates']['collaborators'], $twigvalues);
-
-        // Render the Twig_Markup
-        return new \Twig_Markup($html, 'UTF-8');
+        return new TwigMarkup($html, 'UTF-8');
     }
 
     /**
+     * @param TwigEnvironment $twig
+     * @param bool            $includeUserInfo
      *
-     *
-     * @return Twig_Markup
+     * @return TwigMarkup
      */
-    public function githubRepoContributors($userinfo = false)
+    public function gitHubRepoContributors(TwigEnvironment $twig, $includeUserInfo = false)
     {
-        $this->addTwigPath($this->app);
-
+        $members = [];
+        /** @var GithubApi\Repo $apiRepo */
+        $apiRepo = $this->getGitHubAPI()->api('repo');
         // Call API for org/repo contributors
-        $contributors = $this->getGitHubAPI()->api('repo')->contributors($this->config['github']['org'], $this->config['github']['repo']);
+        $contributors = $apiRepo->contributors($this->config['github']['org'], $this->config['github']['repo']);
 
         // If the caller wants user info added, give it to them
-        if ($userinfo) {
+        if ($includeUserInfo) {
             foreach ($contributors as $contributor) {
-                $members[] = $this->getGitHubAPI()->api('user')->show($contributor['login']);
+                /** @var GithubApi\User $apiUser */
+                $apiUser = $this->getGitHubAPI()->api('user');
+                $members[] = $apiUser->show($contributor['login']);
             }
         } else {
             $members = $contributors;
         }
 
-        // Get our values to be passed to Twig
-        $twigvalues = array(
-            'members' => $members
-        );
+        $context = [
+            'members' => $members,
+        ];
+        $html = $twig->render($this->config['templates']['contributors'], $context);
 
-        $html = $this->app['render']->render($this->config['templates']['contributors'], $twigvalues);
-
-        // Render the Twig_Markup
-        return new \Twig_Markup($html, 'UTF-8');
+        return new TwigMarkup($html, 'UTF-8');
     }
 
     /**
-     * Get the user info for a GitHub user
+     * Get the user info for a GitHub user.
+     *
+     * @param string $userName
      *
      * @return array
      */
-    public function githubUser($user)
+    public function gitHubUser($userName)
     {
-        return $this->getGitHubAPI()->api('user')->show($user);
+        /** @var GithubApi\User $apiUser */
+        $apiUser = $this->getGitHubAPI()->api('user');
+
+        return $apiUser->show($userName);
     }
 
     /**
-     * Get the public events for a Github user
+     * Get the public events for a GitHub user.
+     *
+     * @param string $userName
      *
      * @return array
      */
-    public function githubUserEvents($user)
+    public function gitHubUserEvents($userName)
     {
-        return $this->getGitHubAPI()->api('user')->publicEvents($user);
+        /** @var GithubApi\User $apiUser */
+        $apiUser = $this->getGitHubAPI()->api('user');
+
+        return $apiUser->publicEvents($userName);
     }
 
     /**
-     * Get a valid GitHub API object
+     * Get a valid GitHub API object.
      *
      * @return \Github\Client
      */
     private function getGitHubAPI()
     {
-        if ($this->client) {
+        if ($this->client !== null) {
             return $this->client;
         }
+
+        $options = [
+            'base_url'    => 'https://api.github.com/',
+            'user_agent'  => 'Bolt GitHub API (http://github.com/GawainLynch/bolt-extension-github)',
+            'timeout'     => 10,
+            'api_limit'   => 5000,
+            'api_version' => 'v3',
+            'cache_dir'   => $this->resources->getPath('cache/github')
+        ];
+        $this->client = new GithubClient(new GithubHttpClient($options));
 
         /*
          * The API comes with a cache extension, but it fails in Guzzle.
@@ -191,10 +207,7 @@ class GitHubExtension extends \Twig_Extension
          * We are using the preferable Guzzle cache plugin that seems more stable
          */
         if ($this->config['cache']) {
-            $this->client = new GithubClient();
             $this->addCache();
-        } else {
-            $this->client = new GithubClient();
         }
 
         if (isset($this->config['github']['token'])) {
@@ -205,28 +218,15 @@ class GitHubExtension extends \Twig_Extension
     }
 
     /**
-     * Use a Guzzle/Doctrine cache instead of the APIs
+     * Use a Guzzle/Doctrine cache instead of the APIs.
      */
     private function addCache()
     {
-        $cachePlugin = new CachePlugin(array(
-            'storage' => new DefaultCacheStorage(
-                new DoctrineCacheAdapter(
-                    new FilesystemCache($this->app['paths']['cache'] . '/github')
-                    )
-                )
-            )
-        );
+        $fsCache = new FilesystemCache($this->resources->getPath('cache/github'));
+        $cacheAdapter = new DoctrineCacheAdapter($fsCache);
+        $storage = ['storage' => new DefaultCacheStorage($cacheAdapter)];
+        $cachePlugin = new CachePlugin($storage);
 
-        $this->client->getHttpClient()->client->addSubscriber($cachePlugin);
-    }
-
-    /**
-     *
-     * @param Silex\Application $app
-     */
-    private function addTwigPath(Application $app)
-    {
-        $app['twig.loader.filesystem']->addPath(dirname(dirname(__DIR__)) . '/assets');
+        $this->client->getHttpClient()->addSubscriber($cachePlugin);
     }
 }

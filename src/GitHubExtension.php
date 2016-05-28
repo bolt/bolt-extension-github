@@ -37,7 +37,7 @@ class GitHubExtension extends SimpleExtension
         $app['twig'] = $app->extend(
             'twig',
             function (\Twig_Environment $twig) use ($app) {
-                $twig->addExtension(new Twig\GitHubExtension($app));
+                $twig->addExtension(new Twig\GitHubExtension($this->getConfig(), $app['resources']));
 
                 return $twig;
             }
