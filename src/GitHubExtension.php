@@ -2,12 +2,13 @@
 
 namespace Bolt\Extension\Bolt\GitHub;
 
-use Bolt;
+use Bolt\Extension\SimpleExtension;
+use Silex\Application;
 
 /**
  * Interface to query Bolt's GitHub account via the GitHub API
  *
- * Copyright (C) 2014 Gawain Lynch
+ * Copyright (C) 2014-2016 Gawain Lynch
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,39 +24,24 @@ use Bolt;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author    Gawain Lynch <gawain.lynch@gmail.com>
- * @copyright Copyright (c) 2014, Gawain Lynch
+ * @copyright Copyright (c) 2014-2016, Gawain Lynch
  * @license   http://opensource.org/licenses/GPL-3.0 GNU Public License 3.0
  */
-class Extension extends \Bolt\BaseExtension
+class GitHubExtension extends SimpleExtension
 {
     /**
-     * Extension name
-     *
-     * @var string
+     * {@inheritdoc}
      */
-    const NAME = "GitHub";
-
-    /**
-     * Extension's service container
-     *
-     * @var string
-     */
-    const CONTAINER = 'extensions.GitHub';
-
-    public function getName()
+    protected function registerServices(Application $app)
     {
-        return Extension::NAME;
-    }
+        $app['twig'] = $app->extend(
+            'twig',
+            function (\Twig_Environment $twig) use ($app) {
+                $twig->addExtension(new Twig\GitHubExtension($app));
 
-    public function initialize()
-    {
-        /*
-         * Frontend
-         */
-        if ($this->app['config']->getWhichEnd() == 'frontend') {
-            // Twig functions
-            $this->app['twig']->addExtension(new Twig\GitHubExtension($this->app));
-        }
+                return $twig;
+            }
+        );
     }
 
     /**
@@ -65,17 +51,16 @@ class Extension extends \Bolt\BaseExtension
      */
     protected function getDefaultConfig()
     {
-        return array(
-            'github' => array(
+        return [
+            'github' => [
                 'org'  => 'bolt',
-                'repo' => 'bolt'
-            ),
-            'cache' => true,
-            'templates' => array(
+                'repo' => 'bolt',
+            ],
+            'cache'     => true,
+            'templates' => [
                 'collaborators'  => 'members.twig',
-                'contributors'   => 'members.twig'
-            )
-        );
+                'contributors'   => 'members.twig',
+            ],
+        ];
     }
-
 }
