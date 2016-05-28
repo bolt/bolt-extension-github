@@ -1,34 +1,32 @@
 {
-	"name" : "bolt/github",
-	"type" : "bolt-extension",
-	"keywords" : [
-		""
-	],
-	"require" : {
-		"bolt/bolt" : ">=2.0.0,<3.0.0"
-	},
-	"license" : "GPL-3.0+",
-	"authors" : [{
-			"name" : "Gawain Lynch",
-			"email" : "gawain.lynch@gmail.com"
-		}
-	],
-	"autoload" : {
-		"files" : [
-			"init.php"
-		],
-		"psr-4" : {
-			"Bolt\\Extension\\Bolt\\GitHub\\" : [
-				"",
-				"src/"
-			],
-			"Github\\" : "lib/Github"
-		}
-	},
-	"extra" : {
-		"branch-alias" : {
-			"dev-master" : "2.0.*-dev"
-		}
-	},
-	"description" : "GitHub API interface for Bolt"
+    "name": "bolt/github",
+    "description": "GitHub API interface for Bolt",
+    "type": "bolt-extension",
+    "keywords": [
+        "GitHub",
+        "API",
+        "Webhooks"
+    ],
+    "require": {
+        "bolt/bolt": "^3.0"
+    },
+    "license": "GPL-3.0+",
+    "authors": [
+        {
+            "name": "Gawain Lynch",
+            "email": "gawain.lynch@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Bolt\\Extension\\Bolt\\GitHub\\": "src",
+            "Github\\": "lib/Github"
+        }
+    },
+    "extra": {
+        "bolt-class": "Bolt\\Extension\\Bolt\\GitHub\\GitHubExtension",
+        "branch-alias": {
+            "dev-master": "3.0.x-dev"
+        }
+    }
 }
