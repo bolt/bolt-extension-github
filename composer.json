@@ -10,7 +10,7 @@
     "require": {
         "bolt/bolt": "^3.0",
         "ext-curl": "*",
-        "guzzle/guzzle": "^3.9"
+        "knplabs/github-api": "^1.6"
     },
     "provide": {
         "symfony/event-dispatcher": "2.8"
@@ -24,8 +24,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Bolt\\Extension\\Bolt\\GitHub\\": "src",
-            "Github\\": "lib/Github"
+            "Bolt\\Extension\\Bolt\\GitHub\\": "src"
         }
     },
     "extra": {
