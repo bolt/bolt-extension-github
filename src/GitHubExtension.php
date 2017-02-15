@@ -9,13 +9,12 @@ use Github\HttpClient\HttpClient as GithubHttpClient;
 use Guzzle\Cache\DoctrineCacheAdapter;
 use Guzzle\Plugin\Cache\CachePlugin;
 use Guzzle\Plugin\Cache\DefaultCacheStorage;
-use Pimple as Container;
 use Silex\Application;
 
 /**
  * Interface to query Bolt's GitHub account via the GitHub API
  *
- * Copyright (C) 2014-2016 Gawain Lynch
+ * Copyright (C) 2014-2017 Gawain Lynch
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +60,7 @@ class GitHubExtension extends SimpleExtension
                     'timeout'     => 10,
                     'api_limit'   => 5000,
                     'api_version' => 'v3',
-                    'cache_dir'   => $app['resources']->getPath('cache/github'),
+                    'cache_dir'   => $app['path_resolver']->resolve('%cache%/github'),
                 ];
                 $client = new GithubClient(new GithubHttpClient($options));
 
@@ -83,18 +82,23 @@ class GitHubExtension extends SimpleExtension
             }
         );
 
-        $app['github.api'] = $app->share(
-            function ($app) {
-                return new Container([
-                    'client' => $app->share(function () use ($app) { return $app['github.api.client']; }),
-                ]);
+        $app['twig.runtime.github'] = function ($app) {
+            return new Twig\GitHubRuntime($this->getConfig(), $app['github.api.client']);
+        };
+
+        $app['twig.runtimes'] = $app->extend(
+            'twig.runtimes',
+            function (array $runtimes) {
+                return $runtimes + [
+                        Twig\GitHubRuntime::class => 'twig.runtime.github',
+                    ];
             }
         );
 
         $app['twig'] = $app->extend(
             'twig',
             function (\Twig_Environment $twig) use ($app) {
-                $twig->addExtension(new Twig\GitHubExtension($this->getConfig(), $app['github.api']));
+                $twig->addExtension(new Twig\GitHubExtension());
 
                 return $twig;
             }
