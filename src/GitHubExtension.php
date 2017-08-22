@@ -42,7 +42,7 @@ class GitHubExtension extends SimpleExtension
     {
         $app['github.api.client.cache'] = $app->share(
             function ($app) {
-                $fsCache = new FilesystemCache($app['resources']->getPath('cache/github'));
+                $fsCache = new FilesystemCache($app['path_resolver']->resolve('%cache%/github'));
                 $cacheAdapter = new DoctrineCacheAdapter($fsCache);
                 $storage = ['storage' => new DefaultCacheStorage($cacheAdapter)];
                 $cachePlugin = new CachePlugin($storage);
